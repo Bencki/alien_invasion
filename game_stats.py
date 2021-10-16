@@ -5,6 +5,7 @@ class GameStats:
         """Inicjallizacja danych statystycznych"""
         self.settings = ai_game.settings
         self.reset_stats()
+        self.game_active = False
 
     def reset_stats(self):
         """Inicjalizacja danych statystcznych, które mogą zmianiać się w trakcie gry"""
