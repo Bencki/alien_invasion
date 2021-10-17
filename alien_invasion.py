@@ -4,6 +4,7 @@ import pygame
 
 from setting import Settings
 from game_stats import GameStats
+from scoreboard import Scoreboard
 from button import Button
 from ship import Ship
 from bullet import Bullet
@@ -26,6 +27,7 @@ class AlienInvasion:
         pygame.display.set_caption("Inwazja obcych")
 
         self.stats = GameStats(self)
+        self.sb = Scoreboard(self)
 
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()
@@ -64,8 +66,12 @@ class AlienInvasion:
         #Rozpoczęcie nowej gry po kliknięciu GRA
         button_clicked = self.play_button.rect.collidepoint(mouse_pos)
         if button_clicked and not self.stats.game_active:
+            self.settings.initialize_dynamic_settings()
             self.stats.reset_stats()
             self.stats.game_active = True
+            self.sb.prep_score()
+            self.sb.prep_level()
+            self.sb.prep_ships()
 
             #Usunięcie zawartości list aliens i bullets
             self.aliens.empty()
@@ -114,9 +120,20 @@ class AlienInvasion:
             self.bullets, self.aliens, True, True
         )
 
+        if collisions:
+            for aliens in collisions.values():
+                self.stats.score += self.settings.alien_score * len(aliens)
+            self.sb.prep_score()
+            self.sb.check_high_score()
+
         if not self.aliens:
             self.bullets.empty()
             self._create_fleet()
+            self.settings.increase_speed()
+
+            #Inkrementacja numeru poziomu
+            self.stats.level += 1
+            self.sb.prep_level()
 
     def _update_aliens(self):
         """Uaktualnienie połoenia obcych"""
@@ -171,6 +188,7 @@ class AlienInvasion:
         #Zmniejszenie liczby żyć
         if self.stats.ships_left > 0:
             self.stats.ships_left -= 1
+            self.sb.prep_ships()
             #pauza
             sleep(0.5)
         else:
@@ -199,6 +217,9 @@ class AlienInvasion:
         for bullet in self.bullets.sprites():
             bullet.draw_bullet()
         self.aliens.draw(self.screen)
+
+        #Wyświetlenie punktacji gry
+        self.sb.show_score()
 
         #Wyświetlenie przycisku gdy gra jest nieaktywna
         if not self.stats.game_active:
